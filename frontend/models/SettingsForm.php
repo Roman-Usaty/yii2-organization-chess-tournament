@@ -31,7 +31,7 @@ class SettingsForm extends Model
             ['imageFile', 'file', 'skipOnEmpty' => false, 'extensions' => 'png, jpg'],
             ['username', 'trim'],
             ['username', 'required'],
-            ['username', 'string', 'min' => 2, 'max' => 255],
+            ['username', 'string', 'min' => 5, 'max' => 25],
         ];
     }
 
@@ -46,12 +46,17 @@ class SettingsForm extends Model
         if ($this->validate()) {
 
             $user = $this->getUser(Yii::$app->user->identity->username);
-
+            $this->_user = $user;
             $fileName = hash('sha256', $user->id);
 
-            $user->image = '@web/uploads/' . $fileName . $this->imageFile->extension;
+            if ($user->image !== "@web/images/avatar_ex.png") {
+                $this->deleteCopyImage($fileName);
+            }
 
-            $this->deleteCopyImage($fileName);
+            $user->image = 'uploads/' . $fileName . "." . $this->imageFile->extension;
+
+
+
             $this->imageFile->saveAs($user->image);
 
             $user->save();
@@ -80,7 +85,8 @@ class SettingsForm extends Model
         $extensions = str_replace('.', '', $extensions);
         $path = stristr($path, '.', true);
         $path = str_replace('/', '', $path);
-        if ($path == hash('sha256', $this->id) && $extensions !== $this->imageFile->extension) {
+
+        if ($path == hash('sha256', $this->_user->id) && $extensions !== $this->imageFile->extension) {
             return true;
         }
         return false;

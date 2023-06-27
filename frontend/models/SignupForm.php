@@ -26,17 +26,17 @@ class SignupForm extends Model
             ['username', 'trim'],
             ['username', 'required'],
             ['username', 'unique', 'targetClass' => '\common\models\User', 'message' => 'Это имя пользователя уже занято.'],
-            ['username', 'string', 'min' => 2, 'max' => 255],
+            ['username', 'string', 'min' => 5, 'max' => 25],
 
             ['email', 'trim'],
             ['email', 'required'],
             ['email', 'email'],
-            ['email', 'string', 'max' => 255],
+            ['email', 'string', 'max' => 40],
             ['email', 'unique', 'targetClass' => '\common\models\User', 'message' => 'Этот эмейл уже занят.'],
 
             ['password', 'required'],
             ['password', 'string', 'min' => Yii::$app->params['user.passwordMinLength']],
-            [['password', 're_pass'], 'checkPass'],
+            ['password', 'checkPass'],
 
             ['re_pass', 'required'],
         ];
@@ -61,20 +61,17 @@ class SignupForm extends Model
     public function signup()
     {
         if (!$this->validate()) {
-            return null;
+            return;
         }
 
         $user = new User();
         $user->username = $this->username;
         $user->email = $this->email;
         $user->image = "@web/images/avatar_ex.png";
+        $user->status = 10;
         $user->setPassword($this->password);
         $user->generateAuthKey();
-        $user->generateEmailVerificationToken();
-
-        $auth = Yii::$app->authManager;
-        $userRole = $auth->getRole('user');
-        $auth->assign($userRole, $user->getId());
+        /* $user->generateEmailVerificationToken(); */
 
         return $user->save() && $this->sendEmail($user);
     }
@@ -98,7 +95,7 @@ class SignupForm extends Model
             ->send();
     }
 
-    protected function checkPass($attributes)
+    public function checkPass($attributes)
     {
         if ($this->password == $this->re_pass) {
             return true;

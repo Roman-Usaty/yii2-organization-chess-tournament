@@ -51,8 +51,8 @@ class Tournament extends \yii\db\ActiveRecord
             'name' => 'Name',
             'author' => 'Author',
             'description' => 'Description',
-            'minRank' => 'Min Rank',
-            'maxRank' => 'Max Rank',
+            'minRank' => 'Minimum Rank',
+            'maxRank' => 'Maximum Rank',
             'isActive' => 'Is Active',
         ];
     }
@@ -73,7 +73,7 @@ class Tournament extends \yii\db\ActiveRecord
      * @param integer $id
      * @return static|null
      */
-    public function findById($id)
+    public static function findById($id)
     {
         return static::findOne(['id' => $id]);
     }
@@ -84,7 +84,7 @@ class Tournament extends \yii\db\ActiveRecord
      * @param string $name
      * @return static|null
      */
-    public function FindByName($name)
+    public static function FindByName($name)
     {
         return static::findOne(['name' => $name]);
     }

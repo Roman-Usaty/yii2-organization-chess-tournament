@@ -2,7 +2,7 @@
 
 namespace frontend\controllers;
 
-
+use common\models\ListOfPlayer;
 use Yii;
 
 use yii\base\InvalidArgumentException;
@@ -23,6 +23,7 @@ use frontend\models\ResetPasswordForm;
 use frontend\models\SignupForm;
 use frontend\models\SettingsForm;
 use frontend\models\JoinTournamentForm;
+use frontend\models\TournamentForm;
 
 /**
  * Site controller
@@ -85,9 +86,10 @@ class SiteController extends Controller
     public function actionIndex()
     {
         $tournament = Tournament::find()->orderBy('id desc')->limit(10)->where(['isActive' => 1])->all();
-        $this->tournament = $tournament;
+        $user = User::find()->orderBy('rank ASC')->limit(10)->where(['status' => 10])->all();
         return $this->render('index', [
-            'tournament' => $tournament
+            'tournament' => $tournament,
+            'user' => $user
         ]);
     }
 
@@ -144,7 +146,7 @@ class SiteController extends Controller
     {
         $model = new SignupForm();
         if ($model->load(Yii::$app->request->post()) && $model->signup()) {
-            Yii::$app->session->setFlash('success', 'Thank you for registration. Please check your inbox for verification email.');
+            Yii::$app->session->setFlash('success', 'Благодарим вас за регистрацию. Пожалуйста, проверьте свой почтовый ящик на наличие подтверждающего письма.');
             return $this->goHome();
         }
 
@@ -261,9 +263,6 @@ class SiteController extends Controller
         if (\Yii::$app->request->isPost) {
             $settings->username = Yii::$app->request->post()['SettingsForm']['username'];
             $settings->imageFile = UploadedFile::getInstance($settings, "imageFile");
-            Yii::info(UploadedFile::getInstance($user, "imageFile"));
-
-
 
             if ($settings->upload()) {
                 Yii::$app->user->identity->username = $settings->username;
@@ -287,23 +286,79 @@ class SiteController extends Controller
             ]);
         }
 
-        $tournament = Tournament::findOne(['id' => $tournamentId]);
-        $joinTournamentForm = new JoinTournamentForm($tournament);
 
-        if ($joinTournamentForm->load(Yii::$app->request->post())) {
-            $joinTournamentForm->join(Yii::$app->user->identity->id, $tournamentId);
-            Yii::info($joinTournamentForm->errors);
+
+        $tournament = Tournament::findOne(['id' => $tournamentId]);
+        $listOfPlayer = ListOfPlayer::find()->where(['tournament' => $tournament->id])->all();
+        $joinTournamentForm = new JoinTournamentForm();
+
+
+        if (Yii::$app->user->isGuest) {
             return $this->render('tournament', [
                 'tournament' => $tournament,
                 'model' => $joinTournamentForm,
-                'error' => $joinTournamentForm->errors != [] ? $joinTournamentForm->errors : null
+                'error' => [],
+            ]);
+        }
+
+        if (ListOfPlayer::findBySql("SELECT * FROM `listOfPlayer` WHERE `tournament` = :tournamentId AND `player` = :playerId", [
+            ':tournamentId' => $tournament->id,
+            ':playerId' => Yii::$app->user->identity->id,
+        ])->one() != null) {
+
+            return $this->render('tournament', [
+                'tournament' => $tournament,
+                'model' => $joinTournamentForm,
+                'error' => [
+                    Yii::$app->user->identity->username => [
+                        "Вы уже зарегитрированы в турнире"
+                    ]
+                ],
+                'listOfPlayer' => $listOfPlayer
+            ]);
+        }
+        if ($joinTournamentForm->load(Yii::$app->request->post())) {
+            $joinTournamentForm->join(Yii::$app->user->identity->id, $tournamentId);
+
+            return $this->render('tournament', [
+                'tournament' => $tournament,
+                'model' => $joinTournamentForm,
+                'error' => $joinTournamentForm->errors != [] ? $joinTournamentForm->errors : null,
+                'listOfPlayer' => $listOfPlayer
             ]);
         }
 
 
         return $this->render('tournament', [
             'tournament' => $tournament,
-            'model' => $joinTournamentForm
+            'model' => $joinTournamentForm,
+            'listOfPlayer' => $listOfPlayer
+        ]);
+    }
+
+    public function actionCreateTournament()
+    {
+        $tournamentForm = new TournamentForm();
+
+        if (\Yii::$app->request->isPost && $tournamentForm->load(Yii::$app->request->post())) {
+            $tournamentForm->author = Yii::$app->user->identity->id;
+
+            if ($tournamentForm->createTournament()) {
+                $tournament = Tournament::find()->orderBy('id desc')->limit(10)->where(['isActive' => 1])->all();
+                $user = User::find()->orderBy('rank ASC')->limit(10)->where(['status' => 10])->all();
+                return $this->render('index', [
+                    'tournament' => $tournament,
+                    'user' => $user
+                ]);
+            }
+            return $this->render('createTournament', [
+                'model' => $tournamentForm,
+                'error' => $tournamentForm->errors != [] ? $tournamentForm->errors : null
+            ]);
+        }
+
+        return $this->render('createTournament', [
+            'model' => $tournamentForm
         ]);
     }
 }

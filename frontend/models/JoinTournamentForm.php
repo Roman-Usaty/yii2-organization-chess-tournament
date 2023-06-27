@@ -15,16 +15,6 @@ class JoinTournamentForm extends Model
     public $username;
     public $rank;
 
-    private $tournament;
-
-    public function __construct($tournament)
-    {
-        if (!($tournament instanceof Tournament)) {
-            throw new ErrorException();
-        }
-        $this->tournament = $tournament;
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -33,12 +23,12 @@ class JoinTournamentForm extends Model
         return [
             ['username', 'trim'],
             ['username', 'required'],
-            ['username', 'string', 'min' => 2, 'max' => 255],
+            ['username', 'string', 'min' => 5, 'max' => 25],
             ['username', 'join', 'message' => "Создатели турниров не могут в нем участвовать"],
 
             ['rank', 'trim'],
             ['rank', 'required'],
-            ['rank', 'integer', 'min' => $this->tournament->minRank, 'max' => $this->tournament->maxRank],
+            ['rank', 'integer', 'min' => 0, 'max' => 4000],
         ];
     }
 
@@ -49,9 +39,15 @@ class JoinTournamentForm extends Model
             return $this->addError($this->username, "Что пошло не так");
         }
 
+
+
         $listOfPlayer = new ListOfPlayer();
         $user = User::findOne(['id' => $userId]);
         $tournament = Tournament::findOne(['id' => $tournamentId]);
+
+        if (!($tournament->minRank >= $user->rank && $user->rank <= $tournament->maxRank)) {
+            return $this->addError($this->username, "Ваш ранк недостаточен");
+        }
 
         if ($tournament->author == $user->id) {
             return $this->addError($this->username, "Создатель турнира не может в нем участвовать");

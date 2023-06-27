@@ -55,6 +55,7 @@ $this->registerLinkTag(['rel' => 'icon', 'type' => 'image/x-icon', 'href' => Yii
                     . '</a>'
                     . Html::beginTag('ul', ['class' => 'dropdown-menu', 'aria-labelledby' => 'dropdownMenuLink'])
                     . '<li>' . Html::a('Профиль', BaseUrl::to(['/site/profile'], true), ['class' => 'dropdown-item']) . '</li>'
+                    . '<li>' . Html::a('Создать турнир', BaseUrl::to(['/site/create-tournament'], true), ['class' => 'dropdown-item']) . '</li>'
                     . '<li>' . Html::a('Настройки', BaseUrl::to(['/site/settings'], true), ['class' => 'dropdown-item']) . '</li>'
                     . '<li>' . Html::beginForm(['/site/logout'], 'post', ['class' => 'drpdown-item logout-form']) . '</li>'
                     . '<li>' . Html::submitButton(

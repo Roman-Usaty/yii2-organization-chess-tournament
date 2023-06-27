@@ -20,4 +20,12 @@ $this->title = 'Главная';
                 '</li>';
         }, 'class' => 'list-group list-group-flush pt-3']) ?>
     </div>
+    <div class="w-100 col-sm-5 active_themes">
+        <h2 class="title_theme pb-4 text">Топ игроков по рейтингу</h2>
+        <?= Html::ul($user, ['item' => function ($item, $index) {
+            return '<li class="list-group-item border-primary border-top border-bottom text d-flex justify-content-between">' .
+                Html::a(Html::encode($item->username)) . Html::a(Html::encode($item->rank)) .
+                '</li>';
+        }, 'class' => 'list-group list-group-flush pt-3']) ?>
+    </div>
 </section>
